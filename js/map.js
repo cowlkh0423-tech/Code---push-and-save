@@ -1,10 +1,9 @@
 // =================================
-// Ancient Duel - Ancient Desert Map
+// Ancient Duel - Ancient Desert Map V2
 // =================================
 
 
-
-const mapData = {
+const mapData={
 
 
     centerX:0,
@@ -12,9 +11,9 @@ const mapData = {
     centerY:0,
 
 
-    arenaWidth:780,
+    arenaW:820,
 
-    arenaHeight:460
+    arenaH:470
 
 
 };
@@ -23,67 +22,67 @@ const mapData = {
 
 
 
-function drawMap(
-    ctx,
-    width,
-    height
-){
+
+function drawMap(ctx,W,H){
 
 
 
-    mapData.centerX =
-    width/2;
-
-
-    mapData.centerY =
-    height/2;
+    mapData.centerX=W/2;
+    mapData.centerY=H/2;
 
 
 
 
 
-    // ============================
+    // =========================
     // 사막 배경
-    // ============================
+    // =========================
 
 
-    ctx.fillStyle="#c79a52";
+    ctx.fillStyle="#c59a58";
 
     ctx.fillRect(
         0,
         0,
-        width,
-        height
+        W,
+        H
     );
 
 
 
 
 
-    // 모래 결
+    // 모래 무늬
 
-    ctx.globalAlpha=0.18;
+
+    ctx.globalAlpha=.15;
+
 
     ctx.strokeStyle="#70451e";
 
-    ctx.lineWidth=2;
+    ctx.lineWidth=3;
 
 
 
-    for(
-        let i=0;
-        i<35;
-        i++
-    ){
+    for(let i=0;i<50;i++){
 
 
         ctx.beginPath();
 
 
+        let x=
+        (i*173)%W;
+
+
+        let y=
+        (i*97)%H;
+
+
+
         ctx.arc(
-            (i*170)%width,
-            80+(i%7)*130,
-            80,
+            x,
+            y,
+            40+(i%4)*20,
             0,
             Math.PI
         );
@@ -95,6 +94,7 @@ function drawMap(
     }
 
 
+
     ctx.globalAlpha=1;
 
 
@@ -103,23 +103,23 @@ function drawMap(
 
 
 
-    // ============================
+
+    // =========================
     // 절벽 그림자
-    // ============================
+    // =========================
 
 
-
-    ctx.fillStyle="#4b3420";
+    ctx.fillStyle="#5a3b20";
 
 
     ctx.beginPath();
 
 
     ctx.ellipse(
-        width/2,
-        height/2,
+        W/2,
+        H/2+15,
         470,
-        300,
+        290,
         0,
         0,
         Math.PI*2
@@ -133,23 +133,23 @@ function drawMap(
 
 
 
-    // ============================
-    // 고대 석조 경기장
-    // ============================
+
+    // =========================
+    // 돌 경기장 외곽
+    // =========================
 
 
-
-    ctx.fillStyle="#77634b";
+    ctx.fillStyle="#81705b";
 
 
     ctx.beginPath();
 
 
     ctx.ellipse(
-        width/2,
-        height/2,
-        400,
-        240,
+        W/2,
+        H/2,
+        410,
+        235,
         0,
         0,
         Math.PI*2
@@ -163,18 +163,46 @@ function drawMap(
 
 
 
+
+    // =========================
     // 돌 타일
+    // =========================
 
 
-    ctx.strokeStyle="#9c8565";
+    ctx.save();
+
+
+    ctx.beginPath();
+
+
+    ctx.ellipse(
+        W/2,
+        H/2,
+        410,
+        235,
+        0,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.clip();
+
+
+
+
+    ctx.strokeStyle=
+    "rgba(40,30,20,.25)";
+
 
     ctx.lineWidth=2;
 
 
+
     for(
-        let x=-350;
-        x<350;
-        x+=50
+        let x=-450;
+        x<450;
+        x+=55
     ){
 
 
@@ -182,14 +210,14 @@ function drawMap(
 
 
         ctx.moveTo(
-            width/2+x,
-            height/2-230
+            W/2+x,
+            100
         );
 
 
         ctx.lineTo(
-            width/2+x,
-            height/2+230
+            W/2+x,
+            H-100
         );
 
 
@@ -202,8 +230,8 @@ function drawMap(
 
 
     for(
-        let y=-200;
-        y<200;
+        let y=-250;
+        y<250;
         y+=45
     ){
 
@@ -212,14 +240,112 @@ function drawMap(
 
 
         ctx.moveTo(
-            width/2-390,
-            height/2+y
+            100,
+            H/2+y
         );
 
 
         ctx.lineTo(
-            width/2+390,
-            height/2+y
+            W-100,
+            H/2+y
+        );
+
+
+        ctx.stroke();
+
+
+    }
+
+
+
+    ctx.restore();
+
+
+
+
+
+
+
+
+    // =========================
+    // 중앙 고대 문양
+    // =========================
+
+
+
+    ctx.strokeStyle="#caa15c";
+
+    ctx.lineWidth=6;
+
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        W/2,
+        H/2,
+        130,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.stroke();
+
+
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        W/2,
+        H/2,
+        55,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.stroke();
+
+
+
+
+
+
+
+
+    // =========================
+    // 금 간 바닥
+    // =========================
+
+
+
+    ctx.strokeStyle="#3b3025";
+
+    ctx.lineWidth=3;
+
+
+
+    for(let i=0;i<8;i++){
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            W/2,
+            H/2
+        );
+
+
+        ctx.lineTo(
+            W/2+
+            Math.cos(i)*180,
+            H/2+
+            Math.sin(i)*120
         );
 
 
@@ -233,91 +359,38 @@ function drawMap(
 
 
 
-
-
-
-    // ============================
-    // 중앙 고대 문양
-    // ============================
-
-
-
-    ctx.strokeStyle="#c39a57";
-
-    ctx.lineWidth=5;
-
-
-    ctx.beginPath();
-
-
-    ctx.arc(
-        width/2,
-        height/2,
-        120,
-        0,
-        Math.PI*2
-    );
-
-
-    ctx.stroke();
-
-
-
-
-    ctx.beginPath();
-
-
-    ctx.arc(
-        width/2,
-        height/2,
-        60,
-        0,
-        Math.PI*2
-    );
-
-
-    ctx.stroke();
-
-
-
-
-
-
-
-
-    // ============================
+    // =========================
     // 폐허 기둥
-    // ============================
+    // =========================
 
 
 
-    drawPillar(
+    drawRuinedColumn(
         ctx,
-        120,
+        150,
         150
     );
 
 
-    drawPillar(
+    drawRuinedColumn(
         ctx,
-        width-150,
+        W-180,
         170
     );
 
 
-    drawPillar(
+    drawRuinedColumn(
         ctx,
         170,
-        height-120
+        H-150
     );
 
 
-    drawPillar(
+    drawRuinedColumn(
         ctx,
-        width-200,
-        height-140
+        W-220,
+        H-140
     );
-
 
 
 
@@ -329,10 +402,10 @@ function drawMap(
 
 
 
-function drawPillar(
-    ctx,
-    x,
-    y
+
+
+function drawRuinedColumn(
+ctx,x,y
 ){
 
 
@@ -341,46 +414,93 @@ function drawPillar(
 
 
     ctx.fillStyle=
-    "rgba(0,0,0,.25)";
+    "rgba(0,0,0,.3)";
 
 
-    ctx.fillRect(
-        x+10,
-        y+15,
-        45,
-        100
+    ctx.beginPath();
+
+
+    ctx.ellipse(
+        x+15,
+        y+45,
+        40,
+        15,
+        0,
+        0,
+        Math.PI*2
     );
+
+
+    ctx.fill();
+
+
+
+
 
 
 
     // 기둥
 
 
-    ctx.fillStyle="#806747";
+    ctx.fillStyle="#68533b";
 
 
     ctx.fillRect(
         x,
         y,
-        45,
-        100
+        35,
+        90
     );
 
 
 
-    // 윗돌
 
 
-    ctx.fillStyle="#a58a60";
+    // 밝은 면
+
+
+    ctx.fillStyle="#a38a62";
 
 
     ctx.fillRect(
-        x-10,
-        y-10,
-        65,
-        15
+        x,
+        y,
+        10,
+        90
     );
 
+
+
+
+
+    // 부서진 윗부분
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        x-10,
+        y
+    );
+
+
+    ctx.lineTo(
+        x+45,
+        y
+    );
+
+
+    ctx.lineTo(
+        x+35,
+        y-15
+    );
+
+
+    ctx.closePath();
+
+
+    ctx.fill();
 
 
 }
