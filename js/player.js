@@ -1,5 +1,5 @@
 // =================================
-// Ancient Duel - Player System
+// Ancient Duel - Player System V2
 // =================================
 
 
@@ -16,49 +16,57 @@ constructor(
     this.x=x;
     this.y=y;
 
-
     this.color=color;
-
 
     this.control=control;
 
 
-
-    // 이동
-    this.speed=220;
+    this.speed=230;
 
 
-
-    // 방향
     this.angle=0;
 
 
-
-    // 애니메이션
     this.walkTime=0;
 
 
-
     // 공격
-    this.attackCooldown=0;
+
     this.attackTimer=0;
 
+    this.attackCooldown=0;
 
 
-    // 전투
+    // 체력
+
     this.hp=7;
 
+
+
+    // 물리
+
     this.knockbackX=0;
+
     this.knockbackY=0;
 
 
 
     // 아이템
+
     this.damageBoost=false;
+
     this.invincible=0;
 
 
+
+    // 애니메이션
+
+    this.pose=0;
+
 }
+
+
+
 
 
 
@@ -69,57 +77,56 @@ update(enemy,dt,keys){
 
 
     let dx=0;
+
     let dy=0;
 
 
 
     if(keys[this.control.up])
-        dy-=1;
-
+        dy--;
 
     if(keys[this.control.down])
-        dy+=1;
-
+        dy++;
 
     if(keys[this.control.left])
-        dx-=1;
-
+        dx--;
 
     if(keys[this.control.right])
-        dx+=1;
+        dx++;
 
 
 
 
-    if(dx!==0 || dy!==0){
+    if(dx||dy){
 
 
-        let length=
+        let len=
         Math.hypot(dx,dy);
 
 
-        dx/=length;
-        dy/=length;
+        dx/=len;
+
+        dy/=len;
 
 
 
-        this.x += dx*this.speed*dt;
-
-        this.y += dy*this.speed*dt;
-
+        this.x +=
+        dx*this.speed*dt;
 
 
-        this.walkTime += dt*12;
+        this.y +=
+        dy*this.speed*dt;
+
+
+
+        this.walkTime+=dt*12;
+
 
 
     }
-
-
-
-
     else{
 
-        this.walkTime=0;
+        this.walkTime*=0.8;
 
     }
 
@@ -128,7 +135,7 @@ update(enemy,dt,keys){
 
 
 
-    // 상대 바라보기
+    // 상대 방향
 
     this.angle =
     Math.atan2(
@@ -140,7 +147,7 @@ update(enemy,dt,keys){
 
 
 
-    // 공격 쿨타임
+    // 쿨타임
 
     if(this.attackCooldown>0)
         this.attackCooldown-=dt;
@@ -158,15 +165,14 @@ update(enemy,dt,keys){
         this.attackCooldown<=0
     ){
 
-        this.attackTimer=0.28;
 
-        this.attackCooldown=0.8;
+        this.attackTimer=.35;
 
-
-        this.swing=true;
+        this.attackCooldown=.8;
 
 
     }
+
 
 
 
@@ -188,7 +194,9 @@ update(enemy,dt,keys){
 draw(ctx){
 
 
+
 ctx.save();
+
 
 
 ctx.translate(
@@ -199,19 +207,25 @@ ctx.translate(
 
 
 
-// 캐릭터 그림자
+
+
+// =======================
+// 그림자
+// =======================
+
 
 ctx.fillStyle=
-"rgba(0,0,0,0.35)";
+"rgba(0,0,0,.35)";
 
 
 ctx.beginPath();
 
+
 ctx.ellipse(
     0,
-    38,
-    25,
-    10,
+    42,
+    30,
+    12,
     0,
     0,
     Math.PI*2
@@ -226,57 +240,57 @@ ctx.fill();
 
 
 
-// 걷기 효과
-
-let step =
-Math.sin(this.walkTime)*6;
-
-
-
-
-
-
 // =======================
 // 다리
 // =======================
 
 
-ctx.strokeStyle="#191919";
 
-ctx.lineWidth=8;
+let step =
+Math.sin(this.walkTime)
+*
+7;
+
+
+
+ctx.strokeStyle="#171717";
+
+ctx.lineWidth=9;
 
 ctx.lineCap="round";
-
 
 
 ctx.beginPath();
 
 
 ctx.moveTo(
-    -8,
-    18
+    -9,
+    20
 );
 
+
 ctx.lineTo(
-    -12,
-    35+step
+    -13,
+    40+step
 );
 
 
 
 ctx.moveTo(
-    8,
-    18
+    9,
+    20
 );
 
+
 ctx.lineTo(
-    12,
-    35-step
+    13,
+    40-step
 );
 
 
 
 ctx.stroke();
+
 
 
 
@@ -292,44 +306,53 @@ ctx.fillStyle=this.color;
 
 
 
+let wave =
+Math.sin(
+    this.walkTime*.5
+)
+*
+3;
+
+
+
 ctx.beginPath();
 
 
 ctx.moveTo(
     0,
-    -18
+    -15
 );
 
 
+
 ctx.quadraticCurveTo(
-    -35,
+    -38,
     10,
-    -28,
-    42
+    -30+wave,
+    45
 );
 
 
 
 ctx.quadraticCurveTo(
     0,
-    58,
-    28,
-    42
+    65,
+    30-wave,
+    45
 );
 
 
 
 ctx.quadraticCurveTo(
-    35,
+    38,
     10,
     0,
-    -18
+    -15
 );
 
 
 
 ctx.fill();
-
 
 
 
@@ -342,18 +365,18 @@ ctx.fill();
 // =======================
 
 
-ctx.fillStyle="#252525";
+ctx.fillStyle="#202020";
 
 
 ctx.beginPath();
 
 
 ctx.roundRect(
-    -14,
-    -18,
-    28,
-    38,
-    8
+    -15,
+    -20,
+    30,
+    42,
+    10
 );
 
 
@@ -364,12 +387,14 @@ ctx.fill();
 
 
 
+
+
 // =======================
-// 머리
+// 어깨
 // =======================
 
 
-ctx.fillStyle="#d59a75";
+ctx.fillStyle="#333";
 
 
 ctx.beginPath();
@@ -377,8 +402,8 @@ ctx.beginPath();
 
 ctx.arc(
     0,
-    -32,
-    12,
+    -12,
+    20,
     0,
     Math.PI*2
 );
@@ -393,123 +418,23 @@ ctx.fill();
 
 
 // =======================
-// 팔 + 검
+// 머리
 // =======================
 
 
-ctx.save();
-
-
-ctx.rotate(
-    this.angle
-);
-
-
-
-let swing=0;
-
-
-if(this.attackTimer>0){
-
-    swing =
-    Math.sin(
-        (0.28-this.attackTimer)
-        *
-        Math.PI
-    )
-    *
-    1.6;
-
-}
-
-
-ctx.rotate(
-    swing
-);
-
-
-
-
-ctx.strokeStyle="#222";
-
-ctx.lineWidth=7;
-
-
-ctx.beginPath();
-
-ctx.moveTo(
-    8,
-    -5
-);
-
-
-ctx.lineTo(
-    25,
-    0
-);
-
-
-ctx.stroke();
-
-
-
-
-
-
-// 검 손잡이
-
-ctx.fillStyle="#5b351d";
-
-ctx.fillRect(
-    20,
-    -3,
-    12,
-    6
-);
-
-
-
-
-
-// 칼날
-
-ctx.fillStyle="#ddd";
+ctx.fillStyle="#d79b75";
 
 
 ctx.beginPath();
 
 
-ctx.moveTo(
-    30,
-    -5
+ctx.arc(
+    0,
+    -38,
+    14,
+    0,
+    Math.PI*2
 );
-
-
-ctx.lineTo(
-    85,
-    -3
-);
-
-
-ctx.lineTo(
-    95,
-    0
-);
-
-
-ctx.lineTo(
-    85,
-    3
-);
-
-
-ctx.lineTo(
-    30,
-    5
-);
-
-
-ctx.closePath();
 
 
 ctx.fill();
@@ -517,6 +442,82 @@ ctx.fill();
 
 
 
+
+
+// 머리카락
+
+
+ctx.fillStyle="#171717";
+
+
+ctx.beginPath();
+
+
+ctx.arc(
+    0,
+    -44,
+    14,
+    Math.PI,
+    Math.PI*2
+);
+
+
+ctx.fill();
+
+
+
+
+
+
+
+// =======================
+// 팔
+// =======================
+
+
+
+let attackPose =
+this.attackTimer>0
+?
+-0.5
+:
+0;
+
+
+
+ctx.save();
+
+
+ctx.rotate(
+    attackPose
+);
+
+
+
+ctx.strokeStyle="#d79b75";
+
+ctx.lineWidth=7;
+
+
+ctx.beginPath();
+
+
+ctx.moveTo(
+    8,
+    -12
+);
+
+
+ctx.lineTo(
+    28,
+    -5
+);
+
+
+ctx.stroke();
+
+
+
 ctx.restore();
 
 
@@ -524,8 +525,40 @@ ctx.restore();
 
 
 
-ctx.restore();
 
+// 무적 효과
+
+if(this.invincible>0){
+
+
+    ctx.strokeStyle="#4dcfff";
+
+    ctx.lineWidth=4;
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        0,
+        0,
+        55,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.stroke();
+
+
+}
+
+
+
+
+
+
+ctx.restore();
 
 
 }
