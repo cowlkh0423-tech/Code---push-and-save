@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>CODE : 검혼(劍魂)</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<div id="gameContainer">
+
+    <canvas id="gameCanvas"></canvas>
+
+
+    <!-- 상단 HUD -->
+    <div id="hud">
+
+        <!-- P1 -->
+        <div class="playerUI p1UI">
+
+            <div class="name">
+                🔴 적운(赤雲)
+            </div>
+
+            <div class="hpBar">
+                <div id="hp1" class="hp"></div>
+            </div>
+
+            <div class="cooldownBox">
+
+                <div id="cool1" class="coolCircle">
+                    <span>Q</span>
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- P2 -->
+        <div class="playerUI p2UI">
+
+            <div class="name">
+                🔵 청월(靑月)
+            </div>
+
+            <div class="hpBar">
+                <div id="hp2" class="hp"></div>
+            </div>
+
+            <div class="cooldownBox">
+
+                <div id="cool2" class="coolCircle">
+                    <span>0</span>
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- 아이템 등장 / 획득 알림 -->
+
+    <div id="messageBox">
+
+        <div id="messageTitle"></div>
+
+        <div id="messageText"></div>
+
+    </div>
+
+
+
+    <!-- 아이템 표시 -->
+
+    <div id="itemStatus">
+
+        <span id="p1Item"></span>
+
+        <span id="p2Item"></span>
+
+    </div>
+
+
+
+    <!-- 시작 화면 -->
+
+    <div id="startScreen">
+
+        <h1>
+            CODE : 검혼(劍魂)
+        </h1>
+
+
+        <p>
+            무림 최강의 검객을 가려라
+        </p>
+
+
+        <div class="controls">
+
+            <div>
+                🔴 P1
+                <br>
+                이동 : WASD
+                <br>
+                공격 : Q
+            </div>
+
+
+            <div>
+                🔵 P2
+                <br>
+                이동 : 방향키
+                <br>
+                공격 : 0
+            </div>
+
+        </div>
+
+
+        <button id="startButton">
+            결투 시작
+        </button>
+
+
+    </div>
+
+
+
+    <!-- 승리 화면 -->
+
+    <div id="winScreen">
+
+        <h1 id="winnerText"></h1>
+
+        <button id="restartButton">
+            다시 결투
+        </button>
+
+    </div>
+
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
