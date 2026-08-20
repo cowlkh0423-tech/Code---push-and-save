@@ -1,10 +1,15 @@
-// ===============================
+// =================================
 // Ancient Duel - Main Controller
-// ===============================
+// =================================
 
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+// Canvas
+
+const canvas =
+document.getElementById("gameCanvas");
+
+const ctx =
+canvas.getContext("2d");
 
 
 
@@ -13,92 +18,71 @@ let HEIGHT;
 
 
 
-function resizeCanvas(){
+function resize(){
 
-    WIDTH = canvas.width = window.innerWidth;
-    HEIGHT = canvas.height = window.innerHeight;
+    WIDTH =
+    canvas.width =
+    window.innerWidth;
+
+
+    HEIGHT =
+    canvas.height =
+    window.innerHeight;
 
 }
 
 
 window.addEventListener(
     "resize",
-    resizeCanvas
+    resize
 );
 
 
-resizeCanvas();
+resize();
 
 
 
 
-// ===============================
-// 입력 관리
-// ===============================
+// =================================
+// Input
+// =================================
 
 
-const keys = {};
+const keys={};
 
 
 window.addEventListener(
-    "keydown",
-    e=>{
+"keydown",
+(e)=>{
 
-        keys[e.code] = true;
+    keys[e.code]=true;
 
-    }
-);
+});
 
 
 window.addEventListener(
-    "keyup",
-    e=>{
+"keyup",
+(e)=>{
 
-        keys[e.code] = false;
+    keys[e.code]=false;
 
-    }
-);
-
-
-
-
-
-// ===============================
-// 게임 상태
-// ===============================
-
-
-const game = {
-
-
-    running:true,
-
-
-    delta:0,
-
-
-    lastTime:0,
-
-
-    message:"고대 사막 결투"
-
-
-};
+});
 
 
 
 
 
 
-// ===============================
-// 플레이어 생성
-// ===============================
+// =================================
+// Players
+// =================================
 
 
-const player1 = new Player(
-    450,
-    400,
-    "#2563d8",
+const player1 =
+new Player(
+    350,
+    HEIGHT/2,
+    "#2463d4",
     {
         up:"KeyW",
         down:"KeyS",
@@ -110,10 +94,11 @@ const player1 = new Player(
 
 
 
-const player2 = new Player(
-    900,
-    400,
-    "#d83b4b",
+const player2 =
+new Player(
+    WIDTH-350,
+    HEIGHT/2,
+    "#d94252",
     {
         up:"ArrowUp",
         down:"ArrowDown",
@@ -127,9 +112,27 @@ const player2 = new Player(
 
 
 
-// ===============================
-// 아이템
-// ===============================
+// =================================
+// Weapons
+// =================================
+
+
+const sword1 =
+new Sword(player1);
+
+
+
+const sword2 =
+new Sword(player2);
+
+
+
+
+
+
+// =================================
+// Items
+// =================================
 
 
 const items=[];
@@ -139,12 +142,32 @@ const items=[];
 
 
 
-// ===============================
-// 업데이트
-// ===============================
+
+// =================================
+// Game State
+// =================================
+
+
+const game={
+
+    lastTime:0,
+
+    running:true
+
+};
+
+
+
+
+
+
+// =================================
+// Update
+// =================================
 
 
 function update(dt){
+
 
 
     player1.update(
@@ -152,6 +175,7 @@ function update(dt){
         dt,
         keys
     );
+
 
 
     player2.update(
@@ -162,9 +186,30 @@ function update(dt){
 
 
 
+    sword1.update(dt);
+
+    sword2.update(dt);
+
+
+
+
+    sword1.attack(
+        player2
+    );
+
+
+    sword2.attack(
+        player1
+    );
+
+
+
+
+
     updatePhysics(
         player1,
-        player2
+        player2,
+        dt
     );
 
 
@@ -177,6 +222,7 @@ function update(dt){
     );
 
 
+
 }
 
 
@@ -185,12 +231,14 @@ function update(dt){
 
 
 
-// ===============================
-// 렌더링
-// ===============================
+
+// =================================
+// Render
+// =================================
 
 
 function render(){
+
 
 
     ctx.clearRect(
@@ -202,6 +250,8 @@ function render(){
 
 
 
+    // 맵
+
     drawMap(
         ctx,
         WIDTH,
@@ -210,6 +260,8 @@ function render(){
 
 
 
+    // 아이템
+
     drawItems(
         ctx,
         items
@@ -217,35 +269,56 @@ function render(){
 
 
 
-    player1.draw(
-        ctx
-    );
+    // 캐릭터
+
+    player1.draw(ctx);
+
+    player2.draw(ctx);
 
 
-    player2.draw(
-        ctx
-    );
+
+    // 검 효과
+
+    sword1.draw(ctx);
+
+    sword2.draw(ctx);
 
 
 
     updateUI();
+
 
 }
 
 
 
 
+
+
+
+// =================================
+// UI
+// =================================
 
 
 function updateUI(){
 
 
     document.getElementById("p1").innerText =
-    "BLUE : "+player1.hp+" HP";
+    "BLUE : "
+    +
+    player1.hp
+    +
+    " HP";
+
 
 
     document.getElementById("p2").innerText =
-    "RED : "+player2.hp+" HP";
+    "RED : "
+    +
+    player2.hp
+    +
+    " HP";
 
 
 }
@@ -257,19 +330,22 @@ function updateUI(){
 
 
 
-// ===============================
-// 게임 루프
-// ===============================
+// =================================
+// Game Loop
+// =================================
 
 
-function gameLoop(time){
+function loop(time){
+
 
 
     let dt =
     (time-game.lastTime)/1000;
 
 
+
     game.lastTime=time;
+
 
 
     if(dt>0.1)
@@ -277,16 +353,21 @@ function gameLoop(time){
 
 
 
-    update(dt);
+
+    if(game.running){
 
 
-    render();
+        update(dt);
+
+
+        render();
+
+
+    }
 
 
 
-    requestAnimationFrame(
-        gameLoop
-    );
+    requestAnimationFrame(loop);
 
 
 }
@@ -294,7 +375,4 @@ function gameLoop(time){
 
 
 
-
-requestAnimationFrame(
-    gameLoop
-);
+requestAnimationFrame(loop);
