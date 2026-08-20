@@ -1,0 +1,2980 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>낭떠러지 생존 배틀</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#071016;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+#game{
+    position:relative;
+    width:100vw;
+    height:100vh;
+    overflow:hidden;
+}
+
+canvas{
+    display:block;
+    width:100%;
+    height:100%;
+}
+
+/* ==============================
+   상단 UI
+============================== */
+
+#topUI{
+    position:absolute;
+    top:15px;
+    left:20px;
+    right:20px;
+    display:flex;
+    justify-content:space-between;
+    pointer-events:none;
+    z-index:5;
+}
+
+.playerUI{
+    width:270px;
+}
+
+.playerName{
+    font-size:20px;
+    font-weight:bold;
+    margin-bottom:5px;
+}
+
+#p1UI .playerName{
+    color:#4ca3ff;
+}
+
+#p2UI{
+    text-align:right;
+}
+
+#p2UI .playerName{
+    color:#ff4c4c;
+}
+
+.hpContainer{
+    display:flex;
+    gap:4px;
+    justify-content:flex-start;
+}
+
+#p2UI .hpContainer{
+    justify-content:flex-end;
+}
+
+.hp{
+    width:28px;
+    height:12px;
+    border-radius:4px;
+    background:#222;
+    border:1px solid #555;
+}
+
+#p1UI .hp.active{
+    background:#318fff;
+}
+
+#p2UI .hp.active{
+    background:#ff3e3e;
+}
+
+.cooldowns{
+    display:flex;
+    gap:8px;
+    margin-top:8px;
+}
+
+#p2UI .cooldowns{
+    justify-content:flex-end;
+}
+
+.cooldown{
+    position:relative;
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    background:#111;
+}
+
+.cooldown canvas{
+    width:48px;
+    height:48px;
+}
+
+.cooldownLabel{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    color:white;
+    font-size:9px;
+    font-weight:bold;
+    pointer-events:none;
+}
+
+/* ==============================
+   중앙 UI
+============================== */
+
+#centerUI{
+    position:absolute;
+    top:15px;
+    left:50%;
+    transform:translateX(-50%);
+    text-align:center;
+    color:white;
+    z-index:5;
+    pointer-events:none;
+}
+
+#round{
+    font-size:18px;
+    font-weight:bold;
+}
+
+#timer{
+    font-size:38px;
+    font-weight:bold;
+}
+
+#score{
+    font-size:17px;
+}
+
+/* ==============================
+   시작 / 결과
+============================== */
+
+.overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    background:rgba(0,0,0,.78);
+    color:white;
+    z-index:20;
+}
+
+.hidden{
+    display:none !important;
+}
+
+.overlay h1{
+    font-size:48px;
+    margin-bottom:30px;
+}
+
+.controls{
+    display:flex;
+    gap:100px;
+    text-align:center;
+    margin-bottom:35px;
+}
+
+.controls h2{
+    margin-bottom:12px;
+}
+
+.controls p{
+    color:#ccc;
+    margin:5px;
+}
+
+button{
+    padding:14px 38px;
+    border:none;
+    border-radius:8px;
+    background:white;
+    color:#111;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    transform:scale(1.05);
+}
+
+/* ==============================
+   아이템 설명
+============================== */
+
+#itemNotice{
+    position:absolute;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    color:white;
+    background:rgba(0,0,0,.65);
+    padding:8px 18px;
+    border-radius:10px;
+    font-size:14px;
+    z-index:6;
+    pointer-events:none;
+}
+
+/* ==============================
+   모바일 방지
+============================== */
+
+@media(max-width:800px){
+    .playerUI{
+        width:190px;
+    }
+
+    .overlay h1{
+        font-size:32px;
+    }
+
+    .controls{
+        gap:30px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<canvas id="canvas"></canvas>
+
+<!-- ==========================
+     TOP UI
+========================== -->
+
+<div id="topUI">
+
+    <div class="playerUI" id="p1UI">
+
+        <div class="playerName">
+            🔵 PLAYER 1
+        </div>
+
+        <div class="hpContainer" id="p1HP"></div>
+
+        <div class="cooldowns">
+
+            <div class="cooldown">
+                <canvas id="p1DashCircle"></canvas>
+                <div class="cooldownLabel">Q<br>DASH</div>
+            </div>
+
+            <div class="cooldown">
+                <canvas id="p1GuardCircle"></canvas>
+                <div class="cooldownLabel">E<br>GUARD</div>
+            </div>
+
+            <div class="cooldown">
+                <canvas id="p1AttackCircle"></canvas>
+                <div class="cooldownLabel">R<br>ATK</div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="playerUI" id="p2UI">
+
+        <div class="playerName">
+            🔴 PLAYER 2
+        </div>
+
+        <div class="hpContainer" id="p2HP"></div>
+
+        <div class="cooldowns">
+
+            <div class="cooldown">
+                <canvas id="p2DashCircle"></canvas>
+                <div class="cooldownLabel">,<br>DASH</div>
+            </div>
+
+            <div class="cooldown">
+                <canvas id="p2GuardCircle"></canvas>
+                <div class="cooldownLabel">.<br>GUARD</div>
+            </div>
+
+            <div class="cooldown">
+                <canvas id="p2AttackCircle"></canvas>
+                <div class="cooldownLabel">/<br>ATK</div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div id="centerUI">
+
+    <div id="round">ROUND 1</div>
+
+    <div id="timer">60</div>
+
+    <div id="score">
+        P1 0 : 0 P2
+    </div>
+
+</div>
+
+
+<div id="itemNotice">
+    아이템이 나타납니다!
+</div>
+
+
+<!-- ==========================
+     START SCREEN
+========================== -->
+
+<div class="overlay" id="startScreen">
+
+    <h1>낭떠러지 생존 배틀</h1>
+
+    <div class="controls">
+
+        <div>
+
+            <h2 style="color:#4ca3ff">
+                🔵 PLAYER 1
+            </h2>
+
+            <p>WASD : 이동</p>
+            <p>Q : 대시</p>
+            <p>E : 방어</p>
+            <p>R : 공격</p>
+
+        </div>
+
+
+        <div>
+
+            <h2 style="color:#ff4c4c">
+                🔴 PLAYER 2
+            </h2>
+
+            <p>↑ ↓ ← → : 이동</p>
+            <p>, : 대시</p>
+            <p>. : 방어</p>
+            <p>/ : 공격</p>
+
+        </div>
+
+    </div>
+
+    <button id="startButton">
+        GAME START
+    </button>
+
+</div>
+
+
+<!-- ==========================
+     RESULT
+========================== -->
+
+<div class="overlay hidden" id="resultScreen">
+
+    <h1 id="resultText">
+        PLAYER 1 WIN
+    </h1>
+
+    <div id="resultDetail"></div>
+
+    <br>
+
+    <button id="nextButton">
+        NEXT ROUND
+    </button>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+const canvas =
+    document.getElementById("canvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+let W = 1200;
+let H = 700;
+
+function resize(){
+
+    W = window.innerWidth;
+    H = window.innerHeight;
+
+    canvas.width = W;
+    canvas.height = H;
+}
+
+window.addEventListener(
+    "resize",
+    resize
+);
+
+resize();
+
+
+/* =========================================================
+   GAME SETTINGS
+========================================================= */
+
+const GAME = {
+
+    maxHP:7,
+
+    attackCooldown:.5,
+
+    guardCooldown:1,
+
+    guardDuration:.35,
+
+    dashCooldown:1.5,
+
+    dashDuration:.14,
+
+    playerSpeed:270,
+
+    dashSpeed:900,
+
+    attackRange:78,
+
+    attackKnockback:650,
+
+    goldenKnockback:2,
+
+    dashAttackMultiplier:1.5,
+
+    itemCountPerRound:2,
+
+    healthItemAmount:2,
+
+    invincibleDuration:2,
+
+    roundTime:60
+
+};
+
+
+/* =========================================================
+   ARENA
+   기존보다 약 1.72배 넓은 월드
+========================================================= */
+
+const WORLD = {
+
+    width:1720,
+
+    height:946
+
+};
+
+
+/*
+화면에 맞게 경기장을 자동으로 축소/확대
+*/
+
+function getScale(){
+
+    const sx =
+        W / WORLD.width;
+
+    const sy =
+        H / WORLD.height;
+
+    return Math.min(
+        sx,
+        sy
+    ) * .88;
+}
+
+
+function worldToScreenX(x){
+
+    return (
+        W / 2 +
+        (x - WORLD.width/2) *
+        getScale()
+    );
+}
+
+
+function worldToScreenY(y){
+
+    return (
+        H / 2 +
+        (y - WORLD.height/2) *
+        getScale()
+    );
+}
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+const keys = {};
+
+const justPressed = {};
+
+
+/*
+키가 눌렸을 때만 justPressed에 기록.
+
+이렇게 해서 Q/E/R을 계속 누르고 있어도
+매 프레임 반복 발동되는 문제를 방지.
+*/
+
+window.addEventListener(
+    "keydown",
+    e => {
+
+        const key =
+            e.key.toLowerCase();
+
+        if(!keys[key]){
+
+            justPressed[key] = true;
+
+        }
+
+        keys[key] = true;
+
+
+        if([
+            "arrowup",
+            "arrowdown",
+            "arrowleft",
+            "arrowright",
+            " ",
+            "q",
+            "e",
+            "r",
+            ",",
+            ".",
+            "/"
+        ].includes(key)){
+
+            e.preventDefault();
+
+        }
+
+    }
+);
+
+
+window.addEventListener(
+    "keyup",
+    e => {
+
+        keys[
+            e.key.toLowerCase()
+        ] = false;
+
+    }
+);
+
+
+function consumeKey(key){
+
+    if(justPressed[key]){
+
+        justPressed[key] = false;
+
+        return true;
+
+    }
+
+    return false;
+}
+
+
+/* =========================================================
+   PLAYER
+========================================================= */
+
+class Player{
+
+    constructor(
+        id,
+        x,
+        y,
+        color,
+        controls
+    ){
+
+        this.id = id;
+
+        this.x = x;
+        this.y = y;
+
+        this.spawnX = x;
+        this.spawnY = y;
+
+        this.color = color;
+
+        this.controls = controls;
+
+        this.radius = 30;
+
+        this.vx = 0;
+        this.vy = 0;
+
+        this.facingX =
+            id === 1 ? 1 : -1;
+
+        this.facingY = 0;
+
+        this.hp =
+            GAME.maxHP;
+
+        this.attackTimer = 0;
+
+        this.guardCooldownTimer = 0;
+
+        this.guardTimer = 0;
+
+        this.dashCooldownTimer = 0;
+
+        this.dashTimer = 0;
+
+        this.stunTimer = 0;
+
+        this.hitFlash = 0;
+
+        this.attackFlash = 0;
+
+        this.alive = true;
+
+        this.invincibleTimer = 0;
+
+        this.goldenWeapon = false;
+
+    }
+
+
+    reset(){
+
+        this.x =
+            this.spawnX;
+
+        this.y =
+            this.spawnY;
+
+        this.vx = 0;
+        this.vy = 0;
+
+        this.hp =
+            GAME.maxHP;
+
+        this.attackTimer = 0;
+
+        this.guardCooldownTimer = 0;
+
+        this.guardTimer = 0;
+
+        this.dashCooldownTimer = 0;
+
+        this.dashTimer = 0;
+
+        this.stunTimer = 0;
+
+        this.hitFlash = 0;
+
+        this.attackFlash = 0;
+
+        this.invincibleTimer = 0;
+
+        this.goldenWeapon = false;
+
+        this.alive = true;
+
+    }
+
+
+    update(dt){
+
+        if(!this.alive){
+
+            return;
+
+        }
+
+
+        /*
+        타이머 감소
+        */
+
+        this.attackTimer =
+            Math.max(
+                0,
+                this.attackTimer-dt
+            );
+
+        this.guardCooldownTimer =
+            Math.max(
+                0,
+                this.guardCooldownTimer-dt
+            );
+
+        this.dashCooldownTimer =
+            Math.max(
+                0,
+                this.dashCooldownTimer-dt
+            );
+
+        this.guardTimer =
+            Math.max(
+                0,
+                this.guardTimer-dt
+            );
+
+        this.dashTimer =
+            Math.max(
+                0,
+                this.dashTimer-dt
+            );
+
+        this.stunTimer =
+            Math.max(
+                0,
+                this.stunTimer-dt
+            );
+
+        this.hitFlash =
+            Math.max(
+                0,
+                this.hitFlash-dt
+            );
+
+        this.attackFlash =
+            Math.max(
+                0,
+                this.attackFlash-dt
+            );
+
+        this.invincibleTimer =
+            Math.max(
+                0,
+                this.invincibleTimer-dt
+            );
+
+
+        /*
+        방어
+        */
+
+        if(
+            consumeKey(
+                this.controls.guard
+            ) &&
+            this.guardCooldownTimer <= 0
+        ){
+
+            this.guardTimer =
+                GAME.guardDuration;
+
+            this.guardCooldownTimer =
+                GAME.guardCooldown;
+
+        }
+
+
+        /*
+        공격
+        */
+
+        if(
+            consumeKey(
+                this.controls.attack
+            ) &&
+            this.attackTimer <= 0 &&
+            this.stunTimer <= 0
+        ){
+
+            this.attack();
+
+        }
+
+
+        /*
+        대시
+        */
+
+        if(
+            consumeKey(
+                this.controls.dash
+            ) &&
+            this.dashCooldownTimer <= 0 &&
+            this.stunTimer <= 0
+        ){
+
+            this.dash();
+
+        }
+
+
+        /*
+        이동
+        */
+
+        let dx = 0;
+        let dy = 0;
+
+
+        if(
+            keys[this.controls.up]
+        ){
+
+            dy -= 1;
+
+        }
+
+        if(
+            keys[this.controls.down]
+        ){
+
+            dy += 1;
+
+        }
+
+        if(
+            keys[this.controls.left]
+        ){
+
+            dx -= 1;
+
+        }
+
+        if(
+            keys[this.controls.right]
+        ){
+
+            dx += 1;
+
+        }
+
+
+        /*
+        이동 입력이 있을 때만 방향 변경
+        */
+
+        if(
+            dx !== 0 ||
+            dy !== 0
+        ){
+
+            const len =
+                Math.hypot(
+                    dx,
+                    dy
+                );
+
+            dx /= len;
+            dy /= len;
+
+            this.facingX = dx;
+            this.facingY = dy;
+
+
+            let speed =
+                GAME.playerSpeed;
+
+
+            if(
+                this.guardTimer > 0
+            ){
+
+                speed *= .45;
+
+            }
+
+
+            if(
+                this.dashTimer > 0
+            ){
+
+                speed =
+                    GAME.dashSpeed;
+
+            }
+
+
+            this.vx =
+                dx * speed;
+
+            this.vy =
+                dy * speed;
+
+        }
+        else{
+
+            /*
+            입력이 없으면 즉시 정지에 가깝게
+            */
+
+            this.vx *= .72;
+            this.vy *= .72;
+
+            if(
+                Math.abs(this.vx)<3
+            ){
+
+                this.vx=0;
+
+            }
+
+            if(
+                Math.abs(this.vy)<3
+            ){
+
+                this.vy=0;
+
+            }
+
+        }
+
+
+        /*
+        경직 중이면 이동 제한
+        */
+
+        if(
+            this.stunTimer > 0
+        ){
+
+            this.vx *= .96;
+            this.vy *= .96;
+
+        }
+
+
+        this.x +=
+            this.vx * dt;
+
+        this.y +=
+            this.vy * dt;
+
+
+        /*
+        낭떠러지
+        */
+
+        const edge = 35;
+
+        if(
+            this.x < -edge ||
+            this.x > WORLD.width+edge ||
+            this.y < -edge ||
+            this.y > WORLD.height+edge
+        ){
+
+            this.fall();
+
+        }
+
+    }
+
+
+    attack(){
+
+        this.attackTimer =
+            GAME.attackCooldown;
+
+        this.attackFlash =
+            .12;
+
+
+        const opponent =
+            this.id === 1
+            ? player2
+            : player1;
+
+
+        const dx =
+            opponent.x-this.x;
+
+        const dy =
+            opponent.y-this.y;
+
+        const distance =
+            Math.hypot(dx,dy);
+
+
+        if(
+            distance <=
+            GAME.attackRange
+        ){
+
+            let nx =
+                dx/distance;
+
+            let ny =
+                dy/distance;
+
+
+            const dot =
+                nx*this.facingX +
+                ny*this.facingY;
+
+
+            if(dot > .15){
+
+                let knockback =
+                    GAME.attackKnockback;
+
+
+                /*
+                대시 중 공격
+                넉백 50% 증가
+                */
+
+                if(
+                    this.dashTimer > 0
+                ){
+
+                    knockback *=
+                        GAME.dashAttackMultiplier;
+
+                }
+
+
+                /*
+                황금무기
+                다음 공격 한 번만 2배
+                */
+
+                if(
+                    this.goldenWeapon
+                ){
+
+                    knockback *=
+                        GAME.goldenKnockback;
+
+                    this.goldenWeapon =
+                        false;
+
+                }
+
+
+                opponent.takeHit(
+                    nx,
+                    ny,
+                    knockback
+                );
+
+            }
+
+        }
+
+    }
+
+
+    takeHit(
+        nx,
+        ny,
+        knockback
+    ){
+
+        /*
+        무적 아이템
+        */
+
+        if(
+            this.invincibleTimer > 0
+        ){
+
+            return;
+
+        }
+
+
+        /*
+        방어
+        */
+
+        if(
+            this.guardTimer > 0
+        ){
+
+            this.hitFlash =
+                .08;
+
+            return;
+
+        }
+
+
+        /*
+        체력 감소
+        */
+
+        this.hp--;
+
+        this.hitFlash =
+            .18;
+
+
+        /*
+        넉백
+        */
+
+        this.vx =
+            nx*knockback;
+
+        this.vy =
+            ny*knockback;
+
+        this.stunTimer =
+            .18;
+
+
+        /*
+        7번 맞으면 사망
+        */
+
+        if(
+            this.hp <= 0
+        ){
+
+            this.hp = 0;
+
+            this.die();
+
+        }
+
+    }
+
+
+    dash(){
+
+        this.dashCooldownTimer =
+            GAME.dashCooldown;
+
+        this.dashTimer =
+            GAME.dashDuration;
+
+
+        this.vx =
+            this.facingX*
+            GAME.dashSpeed;
+
+        this.vy =
+            this.facingY*
+            GAME.dashSpeed;
+
+    }
+
+
+    die(){
+
+        if(!this.alive){
+
+            return;
+
+        }
+
+        this.alive = false;
+
+        const winner =
+            this.id === 1
+            ? 2
+            : 1;
+
+        endRound(winner);
+
+    }
+
+
+    fall(){
+
+        if(!this.alive){
+
+            return;
+
+        }
+
+        this.alive = false;
+
+        const winner =
+            this.id === 1
+            ? 2
+            : 1;
+
+        endRound(winner);
+
+    }
+
+
+    draw(){
+
+        if(!this.alive){
+
+            return;
+
+        }
+
+
+        const x =
+            worldToScreenX(
+                this.x
+            );
+
+        const y =
+            worldToScreenY(
+                this.y
+            );
+
+        const s =
+            getScale();
+
+
+        const r =
+            this.radius*s;
+
+
+        /*
+        그림자
+        */
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            x,
+            y+r*.75,
+            r*1.05,
+            r*.42,
+            0,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fillStyle =
+            "rgba(0,0,0,.4)";
+
+        ctx.fill();
+
+
+        /*
+        무적 효과
+        */
+
+        if(
+            this.invincibleTimer > 0
+        ){
+
+            ctx.beginPath();
+
+            ctx.arc(
+                x,
+                y,
+                r*1.45,
+                0,
+                Math.PI*2
+            );
+
+            ctx.strokeStyle =
+                "#ffe44c";
+
+            ctx.lineWidth =
+                5*s;
+
+            ctx.stroke();
+
+        }
+
+
+        /*
+        망토
+        */
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x-r*.25,
+            y-r*.1
+        );
+
+        ctx.lineTo(
+            x-r*1.25,
+            y+r*1.15
+        );
+
+        ctx.lineTo(
+            x+r*.1,
+            y+r*.75
+        );
+
+        ctx.closePath();
+
+        ctx.fillStyle =
+            this.color;
+
+        ctx.fill();
+
+
+        /*
+        몸
+        */
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            x,
+            y+r*.25,
+            r*.52,
+            r*.75,
+            0,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fillStyle =
+            "#252525";
+
+        ctx.fill();
+
+
+        /*
+        머리
+        */
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y-r*.48,
+            r*.43,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fillStyle =
+            "#f1c6a5";
+
+        ctx.fill();
+
+
+        /*
+        머리카락
+        */
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y-r*.62,
+            r*.38,
+            Math.PI,
+            Math.PI*2
+        );
+
+        ctx.fillStyle =
+            "#202020";
+
+        ctx.fill();
+
+
+        /*
+        방패
+        */
+
+        if(
+            this.guardTimer > 0
+        ){
+
+            const sx =
+                x +
+                this.facingX*
+                r*.95;
+
+            const sy =
+                y +
+                this.facingY*
+                r*.95;
+
+
+            ctx.save();
+
+            ctx.translate(
+                sx,
+                sy
+            );
+
+            ctx.rotate(
+                Math.atan2(
+                    this.facingY,
+                    this.facingX
+                )
+            );
+
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                0,
+                -r*.65
+            );
+
+            ctx.lineTo(
+                r*.5,
+                -r*.3
+            );
+
+            ctx.lineTo(
+                r*.5,
+                r*.35
+            );
+
+            ctx.lineTo(
+                0,
+                r*.75
+            );
+
+            ctx.lineTo(
+                -r*.5,
+                r*.35
+            );
+
+            ctx.lineTo(
+                -r*.5,
+                -r*.3
+            );
+
+            ctx.closePath();
+
+            ctx.fillStyle =
+                "#b9d9e8";
+
+            ctx.fill();
+
+            ctx.strokeStyle =
+                "#ffffff";
+
+            ctx.lineWidth =
+                3*s;
+
+            ctx.stroke();
+
+            ctx.restore();
+
+        }
+
+
+        /*
+        칼
+        */
+
+        if(
+            this.attackFlash > 0 ||
+            this.goldenWeapon
+        ){
+
+            const angle =
+                Math.atan2(
+                    this.facingY,
+                    this.facingX
+                );
+
+            ctx.save();
+
+            ctx.translate(
+                x,
+                y
+            );
+
+            ctx.rotate(angle);
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                r*.45,
+                -r*.12
+            );
+
+            ctx.lineTo(
+                r*1.35,
+                -r*.12
+            );
+
+            ctx.lineTo(
+                r*1.35,
+                r*.12
+            );
+
+            ctx.lineTo(
+                r*.45,
+                r*.12
+            );
+
+            ctx.closePath();
+
+            ctx.fillStyle =
+                this.goldenWeapon
+                ? "#ffd700"
+                : "#eeeeee";
+
+            ctx.fill();
+
+            ctx.strokeStyle =
+                this.goldenWeapon
+                ? "#fff2a3"
+                : "#ffffff";
+
+            ctx.lineWidth =
+                2*s;
+
+            ctx.stroke();
+
+            ctx.restore();
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   PLAYERS
+========================================================= */
+
+const player1 =
+    new Player(
+        1,
+
+        WORLD.width*.25,
+
+        WORLD.height*.5,
+
+        "#1d67d8",
+
+        {
+            up:"w",
+            down:"s",
+            left:"a",
+            right:"d",
+
+            dash:"q",
+            guard:"e",
+            attack:"r"
+        }
+    );
+
+
+const player2 =
+    new Player(
+        2,
+
+        WORLD.width*.75,
+
+        WORLD.height*.5,
+
+        "#d82d38",
+
+        {
+            up:"arrowup",
+            down:"arrowdown",
+            left:"arrowleft",
+            right:"arrowright",
+
+            dash:",",
+            guard:".",
+            attack:"/"
+        }
+    );
+
+
+/* =========================================================
+   ITEMS
+========================================================= */
+
+const ITEM_TYPES = {
+
+    heal:{
+        name:"체력 회복",
+        symbol:"+",
+        color:"#4cff75"
+    },
+
+    golden:{
+        name:"황금 무기",
+        symbol:"⚔",
+        color:"#ffd700"
+    },
+
+    invincible:{
+        name:"무적",
+        symbol:"★",
+        color:"#66c7ff"
+    }
+
+};
+
+
+let items = [];
+
+let itemsSpawned = 0;
+
+let nextItemTime = 0;
+
+
+/*
+아이템은 한 판에 정확히 최대 2개.
+첫 아이템과 두 번째 아이템의 시간도 랜덤.
+*/
+
+function setupItems(){
+
+    items = [];
+
+    itemsSpawned = 0;
+
+    scheduleNextItem();
+
+}
+
+
+function scheduleNextItem(){
+
+    if(
+        itemsSpawned >=
+        GAME.itemCountPerRound
+    ){
+
+        return;
+
+    }
+
+
+    /*
+    최소 5초 ~ 남은 시간 안에서 랜덤
+    */
+
+    const min =
+        5;
+
+    const max =
+        Math.max(
+            min+1,
+            roundTime-5
+        );
+
+
+    nextItemTime =
+        min +
+        Math.random()*
+        (max-min);
+
+}
+
+
+function updateItems(dt){
+
+    if(
+        itemsSpawned >=
+        GAME.itemCountPerRound
+    ){
+
+        return;
+
+    }
+
+
+    nextItemTime -= dt;
+
+
+    if(
+        nextItemTime <= 0
+    ){
+
+        spawnItem();
+
+        itemsSpawned++;
+
+        if(
+            itemsSpawned <
+            GAME.itemCountPerRound
+        ){
+
+            scheduleNextItem();
+
+        }
+
+    }
+
+
+    /*
+    플레이어가 아이템 획득
+    */
+
+    for(
+        let i=items.length-1;
+        i>=0;
+        i--
+    ){
+
+        const item =
+            items[i];
+
+
+        checkItemPickup(
+            player1,
+            item
+        );
+
+        if(
+            !items.includes(item)
+        ){
+
+            continue;
+
+        }
+
+
+        checkItemPickup(
+            player2,
+            item
+        );
+
+    }
+
+}
+
+
+function spawnItem(){
+
+    const types =
+        Object.keys(
+            ITEM_TYPES
+        );
+
+    const type =
+        types[
+            Math.floor(
+                Math.random()*
+                types.length
+            )
+        ];
+
+
+    /*
+    경기장 안쪽에서 생성
+    */
+
+    const margin = 180;
+
+
+    const item = {
+
+        type:type,
+
+        x:
+            margin+
+            Math.random()*
+            (WORLD.width-margin*2),
+
+        y:
+            margin+
+            Math.random()*
+            (WORLD.height-margin*2),
+
+        radius:32,
+
+        life:0
+
+    };
+
+
+    items.push(item);
+
+}
+
+
+function checkItemPickup(
+    player,
+    item
+){
+
+    if(!player.alive){
+
+        return;
+
+    }
+
+
+    const d =
+        Math.hypot(
+            player.x-item.x,
+            player.y-item.y
+        );
+
+
+    if(
+        d <
+        player.radius+
+        item.radius
+    ){
+
+        applyItem(
+            player,
+            item.type
+        );
+
+
+        const index =
+            items.indexOf(item);
+
+        if(index !== -1){
+
+            items.splice(
+                index,
+                1
+            );
+
+        }
+
+    }
+
+}
+
+
+function applyItem(
+    player,
+    type
+){
+
+    if(type==="heal"){
+
+        player.hp =
+            Math.min(
+                GAME.maxHP,
+                player.hp+
+                GAME.healthItemAmount
+            );
+
+        showItemMessage(
+            "❤️ 체력 +2!"
+        );
+
+    }
+
+
+    else if(type==="golden"){
+
+        /*
+        다음 공격 한 번만
+        넉백 2배
+        */
+
+        player.goldenWeapon =
+            true;
+
+        showItemMessage(
+            "🗡️ 황금무기 획득! 다음 공격 넉백 2배!"
+        );
+
+    }
+
+
+    else if(type==="invincible"){
+
+        player.invincibleTimer =
+            GAME.invincibleDuration;
+
+        showItemMessage(
+            "🛡️ 2초 무적!"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   ITEM MESSAGE
+========================================================= */
+
+let itemMessageTimer = 0;
+
+function showItemMessage(text){
+
+    document
+        .getElementById(
+            "itemNotice"
+        )
+        .textContent =
+        text;
+
+    itemMessageTimer = 2;
+
+}
+
+
+/* =========================================================
+   ROUND
+========================================================= */
+
+let round = 1;
+
+let p1Wins = 0;
+
+let p2Wins = 0;
+
+let roundTime =
+    GAME.roundTime;
+
+let gameRunning = false;
+
+let lastTime = 0;
+
+
+/* =========================================================
+   START
+========================================================= */
+
+document
+    .getElementById(
+        "startButton"
+    )
+    .addEventListener(
+        "click",
+        startGame
+    );
+
+
+function startGame(){
+
+    document
+        .getElementById(
+            "startScreen"
+        )
+        .classList
+        .add("hidden");
+
+
+    round = 1;
+
+    p1Wins = 0;
+
+    p2Wins = 0;
+
+    startRound();
+
+    gameRunning = true;
+
+    lastTime =
+        performance.now();
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+/* =========================================================
+   START ROUND
+========================================================= */
+
+function startRound(){
+
+    roundTime =
+        GAME.roundTime;
+
+
+    player1.reset();
+
+    player2.reset();
+
+
+    player1.x =
+        WORLD.width*.25;
+
+    player1.y =
+        WORLD.height*.5;
+
+
+    player2.x =
+        WORLD.width*.75;
+
+    player2.y =
+        WORLD.height*.5;
+
+
+    setupItems();
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   LOOP
+========================================================= */
+
+function gameLoop(time){
+
+    if(!gameRunning){
+
+        return;
+
+    }
+
+
+    let dt =
+        (time-lastTime)/1000;
+
+    lastTime = time;
+
+
+    dt =
+        Math.min(
+            dt,
+            .033
+        );
+
+
+    roundTime -= dt;
+
+
+    if(
+        roundTime <= 0
+    ){
+
+        roundTime = 0;
+
+        decideByPosition();
+
+    }
+
+
+    player1.update(dt);
+
+    player2.update(dt);
+
+
+    updateItems(dt);
+
+
+    if(
+        itemMessageTimer > 0
+    ){
+
+        itemMessageTimer -= dt;
+
+    }
+
+
+    draw();
+
+    updateUI();
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+/* =========================================================
+   TIMEOUT
+========================================================= */
+
+function decideByPosition(){
+
+    if(!gameRunning){
+
+        return;
+
+    }
+
+
+    const cx =
+        WORLD.width/2;
+
+    const cy =
+        WORLD.height/2;
+
+
+    const d1 =
+        Math.hypot(
+            player1.x-cx,
+            player1.y-cy
+        );
+
+
+    const d2 =
+        Math.hypot(
+            player2.x-cx,
+            player2.y-cy
+        );
+
+
+    if(d1<d2){
+
+        endRound(1);
+
+    }
+    else{
+
+        endRound(2);
+
+    }
+
+}
+
+
+/* =========================================================
+   END ROUND
+========================================================= */
+
+function endRound(winner){
+
+    if(!gameRunning){
+
+        return;
+
+    }
+
+
+    gameRunning = false;
+
+
+    if(winner===1){
+
+        p1Wins++;
+
+    }
+    else{
+
+        p2Wins++;
+
+    }
+
+
+    const result =
+        document.getElementById(
+            "resultScreen"
+        );
+
+
+    const text =
+        document.getElementById(
+            "resultText"
+        );
+
+
+    const detail =
+        document.getElementById(
+            "resultDetail"
+        );
+
+
+    const button =
+        document.getElementById(
+            "nextButton"
+        );
+
+
+    if(
+        p1Wins>=2 ||
+        p2Wins>=2
+    ){
+
+        text.textContent =
+            winner===1
+            ? "🏆 PLAYER 1 최종 승리!"
+            : "🏆 PLAYER 2 최종 승리!";
+
+
+        detail.textContent =
+            `최종 스코어 P1 ${p1Wins} : ${p2Wins} P2`;
+
+
+        button.textContent =
+            "다시 시작";
+
+
+        button.onclick =
+            restartMatch;
+
+    }
+    else{
+
+        text.textContent =
+            winner===1
+            ? "🔵 PLAYER 1 WIN"
+            : "🔴 PLAYER 2 WIN";
+
+
+        detail.textContent =
+            `현재 스코어 P1 ${p1Wins} : ${p2Wins} P2`;
+
+
+        button.textContent =
+            "NEXT ROUND";
+
+
+        button.onclick =
+            nextRound;
+
+    }
+
+
+    result
+        .classList
+        .remove("hidden");
+
+}
+
+
+/* =========================================================
+   NEXT ROUND
+========================================================= */
+
+function nextRound(){
+
+    document
+        .getElementById(
+            "resultScreen"
+        )
+        .classList
+        .add("hidden");
+
+
+    round++;
+
+    startRound();
+
+    gameRunning = true;
+
+    lastTime =
+        performance.now();
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+/* =========================================================
+   RESTART
+========================================================= */
+
+function restartMatch(){
+
+    document
+        .getElementById(
+            "resultScreen"
+        )
+        .classList
+        .add("hidden");
+
+
+    round = 1;
+
+    p1Wins = 0;
+
+    p2Wins = 0;
+
+    startRound();
+
+    gameRunning = true;
+
+    lastTime =
+        performance.now();
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+/* =========================================================
+   DRAW
+========================================================= */
+
+function draw(){
+
+    ctx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /*
+    낭떠러지 배경
+    */
+
+    ctx.fillStyle =
+        "#0d3c49";
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /*
+    물결
+    */
+
+    ctx.strokeStyle =
+        "rgba(100,220,240,.25)";
+
+    ctx.lineWidth=2;
+
+
+    for(
+        let y=20;
+        y<H;
+        y+=35
+    ){
+
+        ctx.beginPath();
+
+        for(
+            let x=0;
+            x<W;
+            x+=35
+        ){
+
+            ctx.moveTo(
+                x,
+                y
+            );
+
+            ctx.quadraticCurveTo(
+                x+8,
+                y-5,
+                x+17,
+                y
+            );
+
+        }
+
+        ctx.stroke();
+
+    }
+
+
+    /*
+    경기장
+    */
+
+    const scale =
+        getScale();
+
+
+    const ax =
+        worldToScreenX(0);
+
+    const ay =
+        worldToScreenY(0);
+
+    const aw =
+        WORLD.width*scale;
+
+    const ah =
+        WORLD.height*scale;
+
+
+    /*
+    그림자
+    */
+
+    ctx.fillStyle =
+        "rgba(0,0,0,.35)";
+
+    ctx.fillRect(
+        ax+10,
+        ay+12,
+        aw,
+        ah
+    );
+
+
+    /*
+    돌 바닥
+    */
+
+    ctx.fillStyle =
+        "#81775e";
+
+    ctx.fillRect(
+        ax,
+        ay,
+        aw,
+        ah
+    );
+
+
+    /*
+    타일
+    */
+
+    ctx.strokeStyle =
+        "rgba(40,35,25,.2)";
+
+    ctx.lineWidth=1;
+
+
+    const tile =
+        48*scale;
+
+
+    for(
+        let x=ax;
+        x<ax+aw;
+        x+=tile
+    ){
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x,
+            ay
+        );
+
+        ctx.lineTo(
+            x,
+            ay+ah
+        );
+
+        ctx.stroke();
+
+    }
+
+
+    for(
+        let y=ay;
+        y<ay+ah;
+        y+=tile
+    ){
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            ax,
+            y
+        );
+
+        ctx.lineTo(
+            ax+aw,
+            y
+        );
+
+        ctx.stroke();
+
+    }
+
+
+    /*
+    경기장 테두리
+    */
+
+    ctx.strokeStyle =
+        "#b8a878";
+
+    ctx.lineWidth =
+        7*scale;
+
+    ctx.strokeRect(
+        ax,
+        ay,
+        aw,
+        ah
+    );
+
+
+    /*
+    중앙 원
+    */
+
+    ctx.beginPath();
+
+    ctx.arc(
+        W/2,
+        H/2,
+        95*scale,
+        0,
+        Math.PI*2
+    );
+
+    ctx.strokeStyle =
+        "rgba(255,255,255,.18)";
+
+    ctx.lineWidth =
+        4*scale;
+
+    ctx.stroke();
+
+
+    /*
+    아이템
+    */
+
+    drawItems();
+
+
+    /*
+    플레이어
+    */
+
+    player1.draw();
+
+    player2.draw();
+
+}
+
+
+/* =========================================================
+   DRAW ITEMS
+========================================================= */
+
+function drawItems(){
+
+    const scale =
+        getScale();
+
+
+    for(
+        const item of items
+    ){
+
+        item.life += .016;
+
+
+        const x =
+            worldToScreenX(
+                item.x
+            );
+
+        const y =
+            worldToScreenY(
+                item.y
+            );
+
+
+        const data =
+            ITEM_TYPES[
+                item.type
+            ];
+
+
+        /*
+        빛
+        */
+
+        const glow =
+            25+
+            Math.sin(
+                item.life*5
+            )*5;
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            glow*scale,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fillStyle =
+            data.color+
+            "22";
+
+        ctx.fill();
+
+
+        /*
+        아이템 원
+        */
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            28*scale,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fillStyle =
+            "#181818";
+
+        ctx.fill();
+
+        ctx.strokeStyle =
+            data.color;
+
+        ctx.lineWidth =
+            4*scale;
+
+        ctx.stroke();
+
+
+        /*
+        아이콘
+        */
+
+        ctx.fillStyle =
+            data.color;
+
+        ctx.font =
+            `${25*scale}px Arial`;
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+        ctx.fillText(
+            data.symbol,
+            x,
+            y
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   UI UPDATE
+========================================================= */
+
+function updateUI(){
+
+    document
+        .getElementById(
+            "round"
+        )
+        .textContent =
+        `ROUND ${round}`;
+
+
+    document
+        .getElementById(
+            "timer"
+        )
+        .textContent =
+        Math.ceil(roundTime);
+
+
+    document
+        .getElementById(
+            "score"
+        )
+        .textContent =
+        `P1 ${p1Wins} : ${p2Wins} P2`;
+
+
+    updateHP(
+        "p1HP",
+        player1.hp
+    );
+
+
+    updateHP(
+        "p2HP",
+        player2.hp
+    );
+
+
+    updateCircle(
+        "p1DashCircle",
+        player1.dashCooldownTimer,
+        GAME.dashCooldown,
+        "#4ca3ff"
+    );
+
+
+    updateCircle(
+        "p1GuardCircle",
+        player1.guardCooldownTimer,
+        GAME.guardCooldown,
+        "#4ca3ff"
+    );
+
+
+    updateCircle(
+        "p1AttackCircle",
+        player1.attackTimer,
+        GAME.attackCooldown,
+        "#4ca3ff"
+    );
+
+
+    updateCircle(
+        "p2DashCircle",
+        player2.dashCooldownTimer,
+        GAME.dashCooldown,
+        "#ff4c4c"
+    );
+
+
+    updateCircle(
+        "p2GuardCircle",
+        player2.guardCooldownTimer,
+        GAME.guardCooldown,
+        "#ff4c4c"
+    );
+
+
+    updateCircle(
+        "p2AttackCircle",
+        player2.attackTimer,
+        GAME.attackCooldown,
+        "#ff4c4c"
+    );
+
+}
+
+
+/* =========================================================
+   HP
+========================================================= */
+
+function updateHP(
+    id,
+    hp
+){
+
+    const box =
+        document.getElementById(id);
+
+
+    box.innerHTML = "";
+
+
+    for(
+        let i=0;
+        i<GAME.maxHP;
+        i++
+    ){
+
+        const heart =
+            document.createElement(
+                "div"
+            );
+
+
+        heart.className =
+            "hp";
+
+
+        if(
+            i<hp
+        ){
+
+            heart.classList.add(
+                "active"
+            );
+
+        }
+
+
+        box.appendChild(
+            heart
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CIRCULAR COOLDOWN
+========================================================= */
+
+function updateCircle(
+    id,
+    remaining,
+    total,
+    color
+){
+
+    const c =
+        document.getElementById(id);
+
+
+    const cctx =
+        c.getContext("2d");
+
+
+    const size = 48;
+
+    c.width = size;
+    c.height = size;
+
+
+    cctx.clearRect(
+        0,
+        0,
+        size,
+        size
+    );
+
+
+    /*
+    배경 원
+    */
+
+    cctx.beginPath();
+
+    cctx.arc(
+        24,
+        24,
+        20,
+        0,
+        Math.PI*2
+    );
+
+    cctx.strokeStyle =
+        "#333";
+
+    cctx.lineWidth=5;
+
+    cctx.stroke();
+
+
+    /*
+    쿨타임 진행률
+    */
+
+    const progress =
+        1-
+        remaining/total;
+
+
+    /*
+    12시 방향에서 시작해서
+    시계방향으로 차오름
+    */
+
+    const start =
+        -Math.PI/2;
+
+    const end =
+        start+
+        Math.PI*2*
+        progress;
+
+
+    cctx.beginPath();
+
+    cctx.arc(
+        24,
+        24,
+        20,
+        start,
+        end
+    );
+
+    cctx.strokeStyle =
+        color;
+
+    cctx.lineWidth=5;
+
+    cctx.stroke();
+
+
+    /*
+    사용 가능하면 밝게
+    */
+
+    if(
+        remaining<=0
+    ){
+
+        cctx.beginPath();
+
+        cctx.arc(
+            24,
+            24,
+            20,
+            0,
+            Math.PI*2
+        );
+
+        cctx.strokeStyle =
+            color;
+
+        cctx.lineWidth=2;
+
+        cctx.stroke();
+
+    }
+
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+updateHP(
+    "p1HP",
+    GAME.maxHP
+);
+
+updateHP(
+    "p2HP",
+    GAME.maxHP
+);
+
+</script>
+
+</body>
+</html>
